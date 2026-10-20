@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 уже есть в Windows 10 и 11, поэтому ShotHost.exe — один небольшой файл без установки .NET. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>ShotHost</RootNamespace>
+    <AssemblyName>ShotHost</AssemblyName>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <!-- 32-битный процесс видит SysWOW64 вместо System32, а там нет OpenSSH (scp.exe, ssh.exe). -->
+    <Prefer32Bit>false</Prefer32Bit>
+    <GenerateAppConfig>false</GenerateAppConfig>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+    <Product>ShotHost</Product>
+    <Company>yakus.ru</Company>
+    <Description>ShotHost — загрузка скриншотов на свой сервер</Description>
+  </PropertyGroup>
+
+  <!-- Сборки разработки получают серую иконку, официальный релиз (SHOTHOST_RELEASE=1, ставит release.yml) — обычную. -->
+  <PropertyGroup>
+    <ApplicationIcon Condition="'$(SHOTHOST_RELEASE)' == '1'">Resources\AppIcon.ico</ApplicationIcon>
+    <ApplicationIcon Condition="'$(SHOTHOST_RELEASE)' != '1'">Resources\AppIcon-dev.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Та же иконка для значка в трее. -->
+    <EmbeddedResource Include="$(ApplicationIcon)" LogicalName="AppIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Позволяет собирать без установленного Targeting Pack. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
