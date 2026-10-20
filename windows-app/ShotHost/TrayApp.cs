@@ -70,7 +70,7 @@ namespace ShotHost
 
             tray = new NotifyIcon
             {
-                Icon = LoadIcon(SystemInformation.SmallIconSize),
+                Icon = TrayIcons.Idle,
                 ContextMenuStrip = menu,
                 Visible = settings.ShowTrayIcon,
             };
@@ -177,6 +177,8 @@ namespace ShotHost
                 : "ShotHost";
             // NotifyIcon.Text в .NET Framework не длиннее 63 символов.
             tray.Text = text.Length > 63 ? text.Substring(0, 63) : text;
+            var icon = activeUploads > 0 ? TrayIcons.Uploading : watcher != null ? TrayIcons.Watching : TrayIcons.Idle;
+            if (tray.Icon != icon) tray.Icon = icon;
         }
 
         void RestartWatcher()
