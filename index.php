@@ -125,9 +125,9 @@ include __DIR__ . '/header.php';
 					<span class="dl-note"><?= t('dl_macos') ?></span>
 					<span class="btn btn-primary"><?= t('download') ?></span>
 				</a>
-				<a class="dl" href="https://github.com/igoryakus/shothost/releases/latest/download/shothost.ps1">
+				<a class="dl" href="https://github.com/igoryakus/shothost/releases/latest/download/ShotHost.exe">
 					<span class="dl-os"><svg class="os-icon" aria-hidden="true"><use href="#i-windows"/></svg>Windows</span>
-					<span class="dl-file mono">shothost.ps1</span>
+					<span class="dl-file mono">ShotHost.exe</span>
 					<span class="dl-note"><?= t('dl_windows') ?></span>
 					<span class="btn btn-primary"><?= t('download') ?></span>
 				</a>
@@ -214,11 +214,8 @@ sudo chmod 2775 /var/www/html/shothost/files</code></pre>
 					<p><?= t('s7_1') ?></p>
 					<p><?= t('s7_2') ?></p>
 					<p><?= t('s7_3') ?></p>
-					<pre><code>powershell.exe -WindowStyle Hidden -File "<?= t('s7_path') ?>"</code></pre>
-					<p><em><?= t('s7_note') ?></em></p>
-					<pre><code>Get-ExecutionPolicy -List</code></pre>
-					<p><em><?= t('s7_allow') ?></em></p>
-					<pre><code>Set-ExecutionPolicy RemoteSigned -Scope CurrentUser</code></pre>
+					<p><?= t('s7_note') ?></p>
+					<p><?= t('s7_allow') ?></p>
 				</li>
 			</ol>
 		</div>

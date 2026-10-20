@@ -1,4 +1,5 @@
-# Выпуск версии: при пуше тега vX.Y.Z собирает ShotHost.app (ShotHost.dmg и ShotHost.zip) и выкладывает его в GitHub Releases вместе со скриптом для Windows.
+# Выпуск версии: при пуше тега vX.Y.Z собирает ShotHost.app (ShotHost.dmg и ShotHost.zip) и ShotHost.exe для Windows
+# и выкладывает их в GitHub Releases вместе со скриптом PowerShell.
 # Ссылки на сайте ведут на releases/latest/download/..., поэтому всегда отдают последнюю версию.
 name: Release
 
@@ -10,10 +11,33 @@ permissions:
   contents: write
 
 jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build ShotHost.exe
+        shell: pwsh
+        env:
+          SHOTHOST_RELEASE: "1"
+        run: ./windows-app/build.ps1 -Version "$("${{ github.ref_name }}".TrimStart('v'))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ShotHost-windows
+          path: windows-app/build/ShotHost.exe
+
   release:
+    needs: windows
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ShotHost-windows
+          path: windows-app/build
 
       - name: Tests
         working-directory: macos-app
@@ -31,4 +55,5 @@ jobs:
           files: |
             macos-app/build/ShotHost.dmg
             macos-app/build/ShotHost.zip
+            windows-app/build/ShotHost.exe
             bash-client/shothost.ps1
