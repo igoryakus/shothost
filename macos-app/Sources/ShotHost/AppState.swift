@@ -10,12 +10,19 @@ struct RecentUpload: Codable, Identifiable, Equatable {
 
 @MainActor
 final class AppState: ObservableObject {
+    /// Для AppDelegate, которому SwiftUI не передаёт состояние приложения.
+    static private(set) weak var shared: AppState?
+
     @Published private(set) var config: Config
     @Published var isPaused: Bool {
         didSet {
             UserDefaults.standard.set(isPaused, forKey: "isPaused")
             restartWatcher()
         }
+    }
+    /// После загрузки показывать окно со ссылкой (как в shothost.sh), а не уведомление.
+    @Published var showLinkWindow: Bool {
+        didSet { UserDefaults.standard.set(showLinkWindow, forKey: "showLinkWindow") }
     }
     @Published private(set) var recent: [RecentUpload]
     @Published private(set) var activeUploads = 0
@@ -26,7 +33,9 @@ final class AppState: ObservableObject {
 
     init() {
         config = Config.load()
+        defer { AppState.shared = self }
         isPaused = UserDefaults.standard.bool(forKey: "isPaused")
+        showLinkWindow = UserDefaults.standard.object(forKey: "showLinkWindow") as? Bool ?? true
         if let data = UserDefaults.standard.data(forKey: "recent"),
            let saved = try? JSONDecoder().decode([RecentUpload].self, from: data) {
             recent = saved
@@ -101,7 +110,11 @@ final class AppState: ObservableObject {
         do {
             try await Uploader(config: config).upload(file, as: name.fileName)
             remember(RecentUpload(name: name.fileName, url: link, date: Date()))
-            notifier.showUploaded(link)
+            if showLinkWindow {
+                LinkWindow.show(link: link)
+            } else {
+                notifier.showUploaded(link)
+            }
         } catch {
             notifier.showError("Не удалось загрузить \(name.fileName): \(error.localizedDescription)")
         }

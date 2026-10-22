@@ -1,17 +1,16 @@
-<div class="footer">
-    <div class="container">
-        <p>&copy; <?=date('Y'); ?> ShotHost. Yakus Corporation. Все права незащищены.</p>
-    </div>
-</div>
+<?php if (empty($use_viewer)): ?>
+<footer class="footer">
+	<div class="wrap footer-inner">
+		<span>© <?php echo date('Y'); ?> <?= t('footer') ?></span>
+		<a class="mono" href="<?= $site_url ?>">yakus.ru</a>
+	</div>
+</footer>
+<?php endif; ?>
 
-<?php 
-// Подключаем Viewer.js только если это необходимо (есть переменная $image_url или мы не на главной)
-// Или просто подключаем везде для простоты, если скрипт небольшой
-?>
-<!-- Подключаем скрипт плагина Viewer.js -->
+<?php if (!empty($use_viewer)): ?>
+<!-- Viewer.js нужен только на странице скриншота -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.7/viewer.min.js"></script>
-
-<!-- Инициализация плагина -->
-<script src="/shothost/assets/script.js"></script>
+<?php endif; ?>
+<script src="/shothost/assets/script.js?v=2"></script>
 </body>
 </html>

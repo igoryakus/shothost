@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 @main
 struct ShotHostApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var state = AppState()
 
     var body: some Scene {
@@ -13,6 +14,18 @@ struct ShotHostApp: App {
             Image(systemName: state.activeUploads > 0 ? "arrow.up.circle.fill"
                 : (state.isWatching ? "camera.viewfinder" : "pause.circle"))
         }
+    }
+}
+
+/// У приложения только значок в строке меню, и его может быть не видно: спрятан за вырезом экрана
+/// или не разрешён в «Системные настройки → Строка меню». Поэтому повторный запуск из «Программ»
+/// открывает настройки, иначе кажется, что приложение не запускается.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if let state = AppState.shared {
+            SettingsWindow.show(state: state)
+        }
+        return false
     }
 }
 

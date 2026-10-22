@@ -32,12 +32,12 @@ public struct Uploader {
 
     /// Проверяет, что сервер доступен по ключу и папка на нём существует и доступна для записи.
     public func testConnection() async throws {
-        let dir = config.remoteDir.replacingOccurrences(of: "'", with: "'\\''")
+        let dir = config.uploadDir.replacingOccurrences(of: "'", with: "'\\''")
         let args = ["-p", String(config.port)] + sshOptions + ["\(config.user)@\(config.host)", "test -d '\(dir)' && test -w '\(dir)'"]
         let (status, output) = try await run("/usr/bin/ssh", args)
         switch status {
         case 0: return
-        case 1: throw UploadError(message: "Соединение есть, но папка \(config.remoteDir) не найдена или недоступна для записи")
+        case 1: throw UploadError(message: "Соединение есть, но папка \(config.uploadDir) не найдена или недоступна для записи")
         default: throw UploadError(message: output.isEmpty ? "ssh завершился с кодом \(status)" : output)
         }
     }

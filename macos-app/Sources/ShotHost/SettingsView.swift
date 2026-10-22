@@ -49,20 +49,29 @@ struct SettingsView: View {
                 TextField("Сервер (IP или домен)", text: $draft.host, prompt: Text("203.0.113.10"))
                 TextField("SSH-порт", value: $draft.port, format: .number.grouping(.never))
                 TextField("Пользователь", text: $draft.user, prompt: Text("root"))
-                TextField("Папка на сервере", text: $draft.remoteDir)
                 pathRow("SSH-ключ", path: $draft.keyPath, chooseDirectory: false)
             }
 
-            Section("Ссылки") {
-                TextField("Адрес ShotHost", text: $draft.baseURL, prompt: Text("https://example.com/shothost/"))
+            Section {
+                TextField("Папка ShotHost", text: $draft.remoteDir, prompt: Text("/var/www/html/shothost/"))
+                TextField("Сайт", text: $draft.baseURL, prompt: Text("https://example.com"))
+                Text("Файлы загружаются по SSH в \(draft.uploadDir). Ссылка строится из сайта и названия папки, поэтому адрес отдельно вводить не нужно.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if !draft.baseURL.isEmpty {
                     Text("Пример ссылки: \(draft.link(forStem: "screenshot_0123456789abcdef0123"))")
                         .font(.caption).foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
+            } header: {
+                Text("ShotHost на сервере")
             }
 
             Section {
+                Toggle("Показывать окно со ссылкой после загрузки", isOn: $state.showLinkWindow)
+                Text("В окне кнопка «Показать» открывает скриншот в браузере. Если выключено, приходит уведомление.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Toggle("Запускать при входе в систему", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { enabled in setLaunchAtLogin(enabled) }
             }
@@ -87,7 +96,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         // Form в стиле .grouped прокручивается и не сообщает свою высоту окну, поэтому размер задан явно.
-        .frame(width: 520, height: 640)
+        .frame(width: 520, height: 720)
     }
 
     private func pathRow(_ title: String, path: Binding<String>, chooseDirectory: Bool) -> some View {

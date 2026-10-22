@@ -8,11 +8,13 @@ public struct Config: Codable, Equatable {
     public var host = ""
     public var port = 22
     public var user = ""
-    /// Путь на сервере к папке shothost/files/.
-    public var remoteDir = "/var/www/html/shothost/files/"
+    /// Папка проекта ShotHost на сервере; файлы загружаются в её подпапку files/.
+    /// Ключ остался прежним, чтобы читались сохранённые настройки.
+    public var remoteDir = "/var/www/html/shothost/"
     /// Приватный SSH-ключ (без .pub).
     public var keyPath = ""
-    /// Адрес для ссылок: домен или IP с папкой /shothost/.
+    /// Сайт, на котором открывается ShotHost: https://домен или IP, без пути.
+    /// Путь в ссылке берётся из названия папки проекта, поэтому ссылка и папка не могут разойтись.
     public var baseURL = ""
 
     public init() {}
@@ -21,20 +23,52 @@ public struct Config: Codable, Equatable {
         ![watchDir, host, user, remoteDir, keyPath, baseURL].contains { $0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
+    /// Название папки проекта, оно же путь на сайте: /var/www/html/shothost/ → shothost.
+    public var projectName: String {
+        (remoteDir as NSString).lastPathComponent
+    }
+
     public func link(forStem stem: String) -> String {
-        baseURL.hasSuffix("/") ? baseURL + stem : baseURL + "/" + stem
+        // Если в поле всё же вписали адрес с путём, путь отбрасывается.
+        var site = Config.site(fromStored: baseURL)
+        while site.hasSuffix("/") { site.removeLast() }
+        return "\(site)/\(projectName)/\(stem)"
+    }
+
+    /// Папка, куда загружаются файлы: files/ внутри папки проекта.
+    public var uploadDir: String {
+        (remoteDir.hasSuffix("/") ? remoteDir : remoteDir + "/") + "files/"
     }
 
     func remoteTarget(fileName: String) -> String {
-        let dir = remoteDir.hasSuffix("/") ? remoteDir : remoteDir + "/"
-        return "\(user)@\(host):\(dir)\(fileName)"
+        "\(user)@\(host):\(uploadDir)\(fileName)"
+    }
+
+    /// Раньше в настройках указывалась сама папка files/, теперь папка проекта.
+    static func projectDir(fromStored path: String) -> String {
+        var dir = path
+        while dir.count > 1, dir.hasSuffix("/") { dir.removeLast() }
+        guard (dir as NSString).lastPathComponent == "files" else { return path }
+        return (dir as NSString).deletingLastPathComponent + "/"
+    }
+
+    /// Раньше в адресе указывался и путь (https://example.com/shothost/), теперь только сайт.
+    static func site(fromStored address: String) -> String {
+        guard var components = URLComponents(string: address.trimmingCharacters(in: .whitespaces)),
+              components.host != nil else { return address }
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+        return components.string ?? address
     }
 
     private static let defaultsKey = "config"
 
     public static func load(from defaults: UserDefaults = .standard) -> Config {
         guard let data = defaults.data(forKey: defaultsKey),
-              let config = try? JSONDecoder().decode(Config.self, from: data) else { return Config() }
+              var config = try? JSONDecoder().decode(Config.self, from: data) else { return Config() }
+        config.remoteDir = projectDir(fromStored: config.remoteDir)
+        config.baseURL = site(fromStored: config.baseURL)
         return config
     }
 

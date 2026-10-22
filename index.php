@@ -9,6 +9,13 @@ if (strpos($request_uri, $base_path) === 0) {
     $relative_path = substr($request_uri, strlen($base_path));
 }
 
+// Язык: /shothost/ru/ это русская версия, всё остальное английская (см. lang.php)
+require_once __DIR__ . '/lang.php';
+$lang = shothost_lang($relative_path);
+shothost_load_texts($lang);
+$home_url = $lang === 'ru' ? '/shothost/ru/' : '/shothost/';
+$site_url = $lang === 'ru' ? 'https://yakus.ru/ru/' : 'https://yakus.ru/';
+
 $clean_name = trim($relative_path, '/');
 // Если после очистки осталось index.php, то это тоже главная
 if ($clean_name === 'index.php') {
@@ -26,111 +33,206 @@ $is_home = empty($clean_name);
 $file_exists = !empty($clean_name) && file_exists($image_path);
 
 // URL самой картинки для отображения (если это не главная)
-$image_url = $is_home ? "" : "/shothost/files/" . $image_file;
+$image_url = $is_home ? "" : "/shothost/files/" . rawurlencode($image_file);
+
+// Параметры для общих head.php, header.php и footer.php
+$page_title = $is_home ? t('title') : t('title_screenshot') . $clean_name;
+$page_description = $is_home ? t('description') : "";
+$body_class = $is_home ? "home-page" : "viewer-page";
+$use_viewer = !$is_home;
+$download_url = $file_exists ? $image_url : "";
+
+include __DIR__ . '/head.php';
+include __DIR__ . '/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><?php echo $is_home ? "ShotHost - Быстрый обмен скриншотами" : "Просмотр скриншота " . htmlspecialchars($clean_name); ?></title>
 
-	<!-- Подключаем стили плагина Viewer.js -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.7/viewer.min.css" />
-
-	<!-- Основные стили страницы -->
-	<link rel="stylesheet" href="/shothost/assets/style.css" />
-</head>
-<body class="<?php echo $is_home ? 'home-page scrollable' : ''; ?>">
-
-<?php include __DIR__ . '/header.php'; ?>
-<div class="main-content">
-	<?php if ($is_home): ?>
-		<div class="container landing-content">
-			<h1>Максимально быстрая загрузка скриншотов</h1>
-			<p class="lead">Создавайте, загружайте и делитесь скриншотами мгновенно и без навязчивой рекламы.</p>
-
-            <h2 id="about">Возможности</h2>
-            <div class="features">
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-                        </div>
-                        <h3>Мгновенная загрузка</h3>
-                    </div>
-                    <p>Отправляйте скриншоты на сервер в тот же момент, когда файлы записываются на диск.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                        </div>
-                        <h3>Автокопирование URL</h3>
-                    </div>
-                    <p>Готовая к отправке ссылка генерируется сразу и вы можете ей пользоваться, пока в фоне файл копируется на сервер.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        </div>
-                        <h3>Максимальная скорость</h3>
-                    </div>
-                    <p>Мгновенная прямая загрузка на VPS без задержек публичных хостингов.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        </div>
-                        <h3>Приватность на своем сервере</h3>
-                    </div>
-                    <p>Ваши изображения остаются в безопасности на вашем собственном VPS под вашим полным контролем.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>
-                        </div>
-                        <h3>Отсутствие рекламы</h3>
-                    </div>
-                    <p>Полное отсутствие баннеров, всплывающих окон, вотермарок и капч.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"></path></svg>
-                        </div>
-                        <h3>Вечное хранение</h3>
-                    </div>
-                    <p>Ваши файлы размещены навсегда и никогда не удалятся автоматически.</p>
-                </div>
-            </div>
-
-            <div class="demo-image-container">
-                <img src="/shothost/assets/img/demo-file.png" alt="Демонстрация работы" class="demo-image">
-            </div>
-
-			<div class="cta-section">
-				<a href="/shothost/docs/" class="btn-download">Как настроить?</a>
+<?php if ($is_home): ?>
+<main>
+	<section class="product hero" id="about">
+		<div class="wrap product-grid">
+			<div>
+				<svg class="tile tile-lg" aria-hidden="true"><use href="#i-sc"/></svg>
+				<h1 class="product-title">ShotHost</h1>
+				<p class="product-tagline"><?= t('tagline') ?></p>
+				<p class="product-text"><?= t('intro') ?></p>
+				<p class="product-text"><?= t('intro_app') ?></p>
+				<div class="chips">
+					<span class="chip"><?= t('chip_app') ?></span>
+					<span class="chip">Windows</span>
+					<span class="chip"><?= t('chip_vps') ?></span>
+					<span class="chip"><?= t('chip_open_source') ?></span>
+				</div>
+				<div class="hero-actions">
+					<a class="btn btn-primary" href="#download"><?= t('download') ?></a>
+					<a class="btn btn-ghost" href="#setup"><?= t('how_to_set_up') ?></a>
+				</div>
+			</div>
+			<!-- Как это выглядит: скриншот, загрузка в фоне и ссылка, которая уже в буфере обмена -->
+			<div class="demo" aria-label="<?= t('demo_label') ?>">
+				<div class="demo-bar" aria-hidden="true"><i></i><i></i><i></i><span class="mono">ShotHost</span></div>
+				<div class="demo-row">
+					<span class="demo-step mono">01</span>
+					<div class="demo-body">
+						<b><?= t('demo_saved') ?></b>
+						<span class="demo-file mono">SCR-20261011-jvpl.png</span>
+					</div>
+					<span class="demo-ok" aria-hidden="true">✓</span>
+				</div>
+				<div class="demo-row">
+					<span class="demo-step mono">02</span>
+					<div class="demo-body">
+						<b><?= t('demo_link') ?></b>
+						<span class="demo-link mono">yakus.ru/shothost/SCR-20261011-jvpl_2af3a7d3</span>
+					</div>
+					<span class="demo-ok" aria-hidden="true">✓</span>
+				</div>
+				<div class="demo-row">
+					<span class="demo-step mono">03</span>
+					<div class="demo-body">
+						<b><?= t('demo_upload') ?></b>
+						<span class="demo-progress" aria-hidden="true"><span></span></span>
+					</div>
+					<span class="demo-ok demo-ok-late" aria-hidden="true">✓</span>
+				</div>
 			</div>
 		</div>
-	<?php else: ?>
-		<?php if ($file_exists): ?>
-            <!-- Картинка найдена: инициализируем Viewer.js -->
-            <div id="image-gallery">
-                <img id="screenshot" src="<?php echo $image_url; ?>" alt="Скриншот" style="display: none;">
-            </div>
-        <?php else: ?>
-            <!-- Файл еще не докачался: показываем лоадер -->
-            <div class="loader-container" id="waiting-loader" data-url="<?php echo $image_url; ?>">
-                <div class="spinner"></div>
-                <h2>Файл еще загружается...</h2>
-                <p>Страница обновится автоматически, как только скриншот появится на сервере.</p>
-            </div>
-        <?php endif; ?>
-	<?php endif; ?>
-</div>
+	</section>
+
+	<section class="product" id="features">
+		<div class="wrap">
+			<h2 class="section-title"><?= t('features') ?></h2>
+			<ul class="features features-grid">
+				<li><b><?= t('f1_title') ?></b><?= t('f1_text') ?></li>
+				<li><b><?= t('f2_title') ?></b><?= t('f2_text') ?></li>
+				<li><b><?= t('f3_title') ?></b><?= t('f3_text') ?></li>
+				<li><b><?= t('f4_title') ?></b><?= t('f4_text') ?></li>
+				<li><b><?= t('f5_title') ?></b><?= t('f5_text') ?></li>
+				<li><b><?= t('f6_title') ?></b><?= t('f6_text') ?></li>
+				<li><b><?= t('f7_title') ?></b><?= t('f7_text') ?></li>
+				<li><b><?= t('f8_title') ?></b><?= t('f8_text') ?></li>
+			</ul>
+		</div>
+	</section>
+
+	<section class="product" id="download">
+		<div class="wrap">
+			<h2 class="section-title"><?= t('download_title') ?></h2>
+			<p class="product-text"><?= t('download_text') ?></p>
+			<div class="downloads">
+				<a class="dl" href="https://github.com/igoryakus/shothost/releases/latest/download/ShotHost.dmg">
+					<span class="dl-os"><svg class="os-icon" aria-hidden="true"><use href="#i-apple"/></svg>macOS</span>
+					<span class="dl-file mono">ShotHost.dmg</span>
+					<span class="dl-note"><?= t('dl_macos') ?></span>
+					<span class="btn btn-primary"><?= t('download') ?></span>
+				</a>
+				<a class="dl" href="https://github.com/igoryakus/shothost/releases/latest/download/ShotHost.exe">
+					<span class="dl-os"><svg class="os-icon" aria-hidden="true"><use href="#i-windows"/></svg>Windows</span>
+					<span class="dl-file mono">ShotHost.exe</span>
+					<span class="dl-note"><?= t('dl_windows') ?></span>
+					<span class="btn btn-primary"><?= t('download') ?></span>
+				</a>
+				<a class="dl" href="https://github.com/igoryakus/shothost">
+					<span class="dl-os"><svg class="os-icon" aria-hidden="true"><use href="#i-github"/></svg><?= t('dl_server') ?></span>
+					<span class="dl-file mono">igoryakus/shothost</span>
+					<span class="dl-note"><?= t('dl_server_text') ?></span>
+					<span class="btn btn-ghost"><?= t('open_on_github') ?></span>
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="product" id="setup">
+		<div class="wrap">
+			<h2 class="section-title"><?= t('setup_title') ?></h2>
+			<p class="product-text"><?= t('setup_text') ?></p>
+			<ol class="steps">
+				<li class="step">
+					<span class="principle-num mono">01</span>
+					<h3 class="step-title"><?= t('s1_title') ?></h3>
+					<p><?= t('s1_text') ?></p>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">02</span>
+					<h3 class="step-title"><?= t('s2_title') ?></h3>
+					<p><?= t('s2_text') ?></p>
+
+					<h4><?= t('s2_create') ?></h4>
+					<ul>
+						<li><strong>macOS / Linux:</strong> <?= t('s2_mac') ?></li>
+						<li><strong>Windows:</strong> <?= t('s2_win') ?></li>
+					</ul>
+
+					<h4><?= t('s2_install') ?></h4>
+					<p><?= t('s2_run') ?></p>
+					<pre><code>ssh-copy-id -i ~/.ssh/id_ed25519.pub user@your_server_ip</code></pre>
+					<p><?= t('s2_manual') ?></p>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">03</span>
+					<h3 class="step-title"><?= t('s3_title') ?></h3>
+					<p><?= t('s3_text') ?></p>
+					<pre><code>sudo apt update
+sudo apt install nginx php-fpm git</code></pre>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">04</span>
+					<h3 class="step-title"><?= t('s4_title') ?></h3>
+					<p><?= t('s4_text') ?></p>
+					<pre><code>cd /var/www/html
+sudo git clone https://github.com/igoryakus/shothost.git
+sudo chown -R $USER:www-data /var/www/html/shothost
+sudo chmod 2775 /var/www/html/shothost/files</code></pre>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">05</span>
+					<h3 class="step-title"><?= t('s5_title') ?></h3>
+					<p><?= t('s5_text') ?></p>
+					<pre><code>location /shothost/ {
+    try_files $uri $uri/ /shothost/index.php?$args;
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock; <?= t('s5_comment') ?>
+    }
+}</code></pre>
+					<p><?= t('s5_restart') ?></p>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">06</span>
+					<h3 class="step-title"><?= t('s6_title') ?></h3>
+					<p><?= t('s6_1') ?></p>
+					<p><?= t('s6_2') ?></p>
+					<p><?= t('s6_3') ?></p>
+					<?= t('s6_fields') ?>
+					<p><?= t('s6_check') ?></p>
+					<p><?= t('s6_menubar') ?></p>
+					<p><?= t('s6_4') ?></p>
+				</li>
+				<li class="step">
+					<span class="principle-num mono">07</span>
+					<h3 class="step-title"><?= t('s7_title') ?></h3>
+					<p><?= t('s7_1') ?></p>
+					<p><?= t('s7_2') ?></p>
+					<p><?= t('s7_3') ?></p>
+					<p><?= t('s7_note') ?></p>
+					<p><?= t('s7_allow') ?></p>
+				</li>
+			</ol>
+		</div>
+	</section>
+</main>
+<?php elseif ($file_exists): ?>
+	<!-- Картинка найдена: показываем её в Viewer.js -->
+	<div id="image-gallery">
+		<img id="screenshot" src="<?php echo htmlspecialchars($image_url); ?>" alt="<?= t('screenshot_alt') ?>" style="display: none;">
+	</div>
+<?php else: ?>
+	<!-- Файл еще не докачался: показываем лоадер -->
+	<div class="loader-container" id="waiting-loader" data-url="<?php echo htmlspecialchars($image_url); ?>">
+		<div class="spinner" aria-hidden="true"></div>
+		<h2><?= t('loading_title') ?></h2>
+		<p><?= t('loading_text') ?></p>
+	</div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/footer.php'; ?>

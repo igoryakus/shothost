@@ -1,5 +1,5 @@
 #!/bin/bash
-# Собирает ShotHost.app (универсальный: Apple Silicon и Intel) в macos-app/build/.
+# Собирает ShotHost.app (универсальный: Apple Silicon и Intel) в macos-app/build/, а также ShotHost.zip и ShotHost.dmg.
 # Нужны Xcode или Command Line Tools: xcode-select --install
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -27,4 +27,13 @@ iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --deep --sign - "$APP"
 
 ditto -c -k --keepParent "$APP" build/ShotHost.zip
+
+# Образ диска для скачивания с сайта: приложение и ярлык «Программы», чтобы перетащить одно на другое.
+DMG_DIR="build/dmg"
+rm -rf "$DMG_DIR" build/ShotHost.dmg
+mkdir -p "$DMG_DIR"
+cp -R "$APP" "$DMG_DIR/"
+ln -s /Applications "$DMG_DIR/Applications"
+hdiutil create -volname ShotHost -srcfolder "$DMG_DIR" -fs HFS+ -format UDZO -ov build/ShotHost.dmg >/dev/null
+rm -rf "$DMG_DIR"
 echo "Готово: $(pwd)/$APP"
